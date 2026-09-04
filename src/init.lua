@@ -1,3 +1,4 @@
+script_version("1.0.0")
 local ffi = require("ffi")
 
 ffi.cdef[[
