@@ -89,7 +89,7 @@ local mooncl = require("mooncl")
 local ffi = require("ffi")
 
 function main()
-    while not isSampAvailable() do wait(100) end
+    while not isSampAvailable() do wait(0) end
 
     -- Инициализация OpenCL
     local ok, dev_name = mooncl.init()
