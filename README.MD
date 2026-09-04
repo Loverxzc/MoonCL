@@ -5,6 +5,8 @@
 ![OpenCL](https://img.shields.io/badge/OpenCL-1.2-green.svg)
 ![License](https://img.shields.io/badge/license-Apache%202.0-lightgrey.svg)
 
+[![Скачать MoonCL](https://img.shields.io/badge/Скачать_MoonCL-v0.1.0-2ea44f?style=for-the-badge&logo=github)](https://github.com/Loverxzc/MoonCL/releases)
+
 **MoonCL** - это легковесный OpenCL 1.2 мост для **MoonLoader**, позволяющий перенести массивные параллельные геометрические, матричные и пространственные расчеты прямо на GPU.
 
 Библиотека создана для решения специфических вычислительных задач: кастомные рейкасты, проверка сотен хитбоксов, пространственная кластеризация объектов, обработка геометрии и симуляции без блокировки игрового цикла.
