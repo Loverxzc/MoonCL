@@ -1,4 +1,4 @@
-script_version("1.0.0")
+script_version("0.1.0")
 local ffi = require("ffi")
 
 ffi.cdef[[
@@ -132,7 +132,7 @@ function M.init()
     if res == 1 then
         return true, msg
     else
-        return false, string.format("РљРѕРґ %d: %s", res, msg ~= "" and msg or "РќРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё")
+        return false, string.format("Код %d: %s", res, msg ~= "" and msg or "Неизвестная ошибка инициализации")
     end
 end
 
@@ -155,7 +155,7 @@ end
 ---@param w? number
 ---@return boolean
 function Kernel:set_float4(arg_idx, x, y, z, w)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     
     local v
     if type(x) == "cdata" then
@@ -170,7 +170,7 @@ function Kernel:set_float4(arg_idx, x, y, z, w)
     return dll.mooncl_set_arg_val(self.handle, arg_idx, v, 16) == 1
 end
 
----РЎРѕР·РґР°РµС‚ РјР°СЃСЃРёРІ float4 РЅР° СЃС‚РѕСЂРѕРЅРµ CPU РґР»СЏ Р·Р°РїРёСЃРё РІ Р±СѓС„РµСЂ
+---Создает массив float4 на стороне CPU для записи в буфер
 ---@param count integer
 ---@return ffi.cdata*
 function M.new_float4_array(count)
@@ -180,10 +180,10 @@ end
 ---@param size_bytes integer
 ---@return MoonCLBuffer
 function M.create_buffer(size_bytes)
-    assert(M.is_ready(), "[MoonCL] GPU РЅРµ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ!")
+    assert(M.is_ready(), "[MoonCL] GPU не инициализирован!")
     local dll = get_dll()
     local mem = dll.mooncl_create_buffer(size_bytes)
-    assert(mem ~= nil, "[MoonCL] РќРµ СѓРґР°Р»РѕСЃСЊ РІС‹РґРµР»РёС‚СЊ Р±СѓС„РµСЂ РІ VRAM!")
+    assert(mem ~= nil, "[MoonCL] Не удалось выделить буфер в VRAM!")
     
     ffi.gc(mem, dll.mooncl_free_buffer)
 
@@ -194,7 +194,7 @@ end
 ---@param size? integer
 ---@return boolean
 function Buffer:write(cdata, size)
-    assert(self.handle ~= nil, "[MoonCL] РџРѕРїС‹С‚РєР° Р·Р°РїРёСЃРё РІ РѕСЃРІРѕР±РѕР¶РґРµРЅРЅС‹Р№ Р±СѓС„РµСЂ!")
+    assert(self.handle ~= nil, "[MoonCL] Попытка записи в освобожденный буфер!")
     local dll = get_dll()
     return dll.mooncl_write_buffer(self.handle, cdata, size or self.size) == 1
 end
@@ -203,7 +203,7 @@ end
 ---@param size? integer
 ---@return boolean
 function Buffer:read(cdata, size)
-    assert(self.handle ~= nil, "[MoonCL] РџРѕРїС‹С‚РєР° С‡С‚РµРЅРёСЏ РёР· РѕСЃРІРѕР±РѕР¶РґРµРЅРЅРѕРіРѕ Р±СѓС„РµСЂР°!")
+    assert(self.handle ~= nil, "[MoonCL] Попытка чтения из освобожденного буфера!")
     local dll = get_dll()
     return dll.mooncl_read_buffer(self.handle, cdata, size or self.size) == 1
 end
@@ -212,7 +212,7 @@ end
 ---@param size? integer
 ---@return MoonCLEvent|nil
 function Buffer:read_async(cdata, size)
-    assert(self.handle ~= nil, "[MoonCL] РџРѕРїС‹С‚РєР° С‡С‚РµРЅРёСЏ РёР· РѕСЃРІРѕР±РѕР¶РґРµРЅРЅРѕРіРѕ Р±СѓС„РµСЂР°!")
+    assert(self.handle ~= nil, "[MoonCL] Попытка чтения из освобожденного буфера!")
     local dll = get_dll()
     local evt = dll.mooncl_read_buffer_async(self.handle, cdata, size or self.size)
     if evt == nil then return nil end
@@ -233,7 +233,7 @@ end
 ---@return MoonCLKernel|nil kernel
 ---@return string|nil error_log
 function M.compile(source, kernel_name)
-    assert(M.is_ready(), "[MoonCL] GPU РЅРµ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ!")
+    assert(M.is_ready(), "[MoonCL] GPU не инициализирован!")
     local dll = get_dll()
     local log_buf = ffi.new("char[4096]")
     local handle = dll.mooncl_compile_kernel(source, kernel_name, log_buf, 4096)
@@ -251,7 +251,7 @@ end
 ---@return MoonCLKernel|nil kernel
 ---@return string|nil error_log
 function M.get_kernel(kernel_name)
-    assert(M.is_ready(), "[MoonCL] GPU РЅРµ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ!")
+    assert(M.is_ready(), "[MoonCL] GPU не инициализирован!")
     local dll = get_dll()
     local log_buf = ffi.new("char[4096]")
     local handle = dll.mooncl_get_builtin_kernel(kernel_name, log_buf, 4096)
@@ -269,7 +269,7 @@ end
 ---@param buffer_obj MoonCLBuffer|ffi.cdata*
 ---@return boolean
 function Kernel:set_buffer(arg_idx, buffer_obj)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     local dll = get_dll()
 
     local h = buffer_obj
@@ -278,7 +278,7 @@ function Kernel:set_buffer(arg_idx, buffer_obj)
     end
 
     ---@cast h ffi.cdata*
-    assert(h ~= nil, "[MoonCL] РџРµСЂРµРґР°РЅ РїСѓСЃС‚РѕР№ РёР»Рё РѕСЃРІРѕР±РѕР¶РґРµРЅРЅС‹Р№ Р±СѓС„РµСЂ!")
+    assert(h ~= nil, "[MoonCL] Передан пустой или освобожденный буфер!")
 
     return dll.mooncl_set_arg_buffer(self.handle, arg_idx, h) == 1
 end
@@ -287,7 +287,7 @@ end
 ---@param val number
 ---@return boolean
 function Kernel:set_float(arg_idx, val)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     local dll = get_dll()
     local v = ffi.new("float[1]", val)
     return dll.mooncl_set_arg_val(self.handle, arg_idx, v, 4) == 1
@@ -297,7 +297,7 @@ end
 ---@param val integer
 ---@return boolean
 function Kernel:set_int(arg_idx, val)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     local dll = get_dll()
     local v = ffi.new("int[1]", val)
     return dll.mooncl_set_arg_val(self.handle, arg_idx, v, 4) == 1
@@ -308,7 +308,7 @@ end
 ---@param type_size integer
 ---@return boolean
 function Kernel:set_raw(arg_idx, cdata_ptr, type_size)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     local dll = get_dll()
     return dll.mooncl_set_arg_val(self.handle, arg_idx, cdata_ptr, type_size) == 1
 end
@@ -316,7 +316,7 @@ end
 ---@param global_size integer
 ---@return boolean
 function Kernel:run(global_size)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     local dll = get_dll()
     return dll.mooncl_run_kernel(self.handle, global_size) == 1
 end
@@ -324,7 +324,7 @@ end
 ---@param global_size integer
 ---@return MoonCLEvent|nil
 function Kernel:run_async(global_size)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     local dll = get_dll()
     local evt = dll.mooncl_run_kernel_async(self.handle, global_size)
     if evt == nil then return nil end
@@ -335,7 +335,7 @@ end
 ---@param sizes_table integer[]
 ---@return boolean
 function Kernel:run_nd(work_dim, sizes_table)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     local dll = get_dll()
     local c_sizes = ffi.new("size_t[?]", work_dim, sizes_table)
     return dll.mooncl_run_kernel_nd(self.handle, work_dim, c_sizes) == 1
@@ -345,7 +345,7 @@ end
 ---@param sizes_table integer[]
 ---@return MoonCLEvent|nil
 function Kernel:run_nd_async(work_dim, sizes_table)
-    assert(self.handle ~= nil, "[MoonCL] РЇРґСЂРѕ СѓР¶Рµ РѕСЃРІРѕР±РѕР¶РґРµРЅРѕ!")
+    assert(self.handle ~= nil, "[MoonCL] Ядро уже освобождено!")
     local dll = get_dll()
     local c_sizes = ffi.new("size_t[?]", work_dim, sizes_table)
     local evt = dll.mooncl_run_kernel_nd_async(self.handle, work_dim, c_sizes)
