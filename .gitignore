@@ -1,5 +1,7 @@
-.vscode
-build
-test.lua
-.clangd
-mooncl.dll
+/*
+!.gitignore
+!LICENSE
+!build.sh
+!src/
+!include/
+!lib32/
