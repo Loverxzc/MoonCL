@@ -89,6 +89,13 @@ Buffer.__index = Buffer
 local Kernel = {}
 Kernel.__index = Kernel
 
+local INIT_STAGES = {
+    [-1] = "clGetPlatformIDs",
+    [-2] = "clGetDeviceIDs",
+    [-3] = "clCreateContext",
+    [-4] = "clCreateCommandQueue",
+}
+
 local M = {}
 
 ---@type MoonCLNative|nil
@@ -149,7 +156,13 @@ function M.init()
     if res == 1 then
         return true, msg
     else
-        return false, string.format("Код %d: %s", res, msg ~= "" and msg or "Неизвестная ошибка инициализации")
+        local stage_name = INIT_STAGES[res] or "mooncl_init"
+        local err_text = string.format("%s (%d): %s", 
+            stage_name, 
+            res, 
+            msg ~= "" and msg or "Неизвестная ошибка инициализации"
+        )
+        return false, err_text
     end
 end
 
